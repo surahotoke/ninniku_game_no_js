@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>にんにく農家</title>
+    <style>
+        /* 二分探索 */
+        .mouse-tracker {
+            /* 調整可能 */
+            --square-length: 500px;
+            background-color: rgb(180, 108, 50);
+
+            /* 固定 */
+            position: relative;
+            width: var(--square-length);
+            height: var(--square-length);
+            cursor: none;
+        }
+
+        .left,
+        .top {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            animation: 40ms steps(2) infinite;
+            cursor: none;
+        }
+
+        .left {
+            width: 50%;
+            transform-origin: left;
+            animation-name: moveW;
+        }
+
+        .top {
+            height: 50%;
+            transform-origin: top;
+            animation-name: moveH;
+        }
+
+        .mouse-tracker:not(:hover) .left,
+        .mouse-tracker:not(:hover) .top,
+        .left:hover,
+        .top:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes moveW {
+            from {
+                left: 0;
+                --_x: 0;
+            }
+
+            to {
+                right: 0;
+                --_x: 1;
+            }
+        }
+
+        @keyframes moveH {
+            from {
+                top: 0;
+                --_y: 0;
+            }
+
+            to {
+                bottom: 0;
+                --_y: 1;
+            }
+        }
+
+        /* 座標計算 */
+        .a {
+            --y-a: calc(var(--_y));
+        }
+
+        .b {
+            --x-b: calc(var(--_x));
+        }
+
+        .c {
+            --y-c: calc(2 * var(--_y));
+        }
+
+        .d {
+            --x-d: calc(2 * var(--_x));
+        }
+
+        .e {
+            --y-e: calc(4 * var(--_y));
+        }
+
+        .f {
+            --x-f: calc(4 * var(--_x));
+        }
+
+        .g {
+            --y-g: calc(8 * var(--_y));
+        }
+
+        .h {
+            --x-h: calc(8 * var(--_x));
+        }
+
+        .i {
+            --y-i: calc(16 * var(--_y));
+        }
+
+        .j {
+            --x-j: calc(16 * var(--_x));
+        }
+
+        .k {
+            --y-k: calc(32 * var(--_y));
+        }
+
+        .l {
+            --x-l: calc(32 * var(--_x));
+        }
+
+        .a {
+            /* マウスマス */
+            --x: calc(var(--x-b) + var(--x-d) + var(--x-f) + var(--x-h) + var(--x-j) + var(--x-l));
+            --y: calc(var(--y-a) + var(--y-c) + var(--y-e) + var(--y-g) + var(--y-i) + var(--y-k));
+            /* マウス位置 */
+            --scale: calc(var(--square-length) / 64);
+            --mouse-x: calc(var(--x) * var(--scale) - 0.5 * var(--square-length));
+            --mouse-y: calc(var(--y) * var(--scale) - 0.5 * var(--square-length));
+        }
+
+        /* マウス位置検出可能エリア */
+        .screen {
+            width: var(--square-length);
+            height: var(--square-length);
+            translate: calc(-2px - 0.5 * var(--square-length) - var(--mouse-x)) calc(-2px - 0.5 * var(--square-length) - var(--mouse-y));
+            overflow: hidden;
+        }
+
+        .chara {
+            width: 90px;
+            height: 90px;
+            translate: var(--mouse-x) var(--mouse-y);
+            background-image: url(character_ninniku.png);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            display: none;
+        }
+
+        .a:hover>.screen {
+
+            /* 調整可能 */
+            >.chara {
+                display: inline;
+            }
+        }
+
+
+
+        .a:has(.a>.b) {
+            display: block;
+        }
+
+        @property --r0 {
+            syntax: "<number>";
+            inherits: true;
+            initial-value: 0;
+        }
+
+        @keyframes random-builder {
+            to {
+                --r0: 1;
+            }
+        }
+
+        .click-random-build {
+            cursor: pointer;
+            animation: random-builder linear 1s infinite;
+            pointer-events: auto;
+        }
+
+        .click-random-build:has(.click-random-build:checked) {
+            animation-play-state: paused;
+            --r1: calc(mod(1664525 * var(--r0) * 4294967296 + 1013904223, 4294967296) / 4294967296);
+            --r2: calc(mod(1664525 * var(--r1) * 4294967296 + 1013904223, 4294967296) / 4294967296);
+            --r3: calc(mod(1664525 * var(--r2) * 4294967296 + 1013904223, 4294967296) / 4294967296);
+            --r4: calc(mod(1664525 * var(--r3) * 4294967296 + 1013904223, 4294967296) / 4294967296);
+            --r5: calc(mod(1664525 * var(--r4) * 4294967296 + 1013904223, 4294967296) / 4294967296);
+            --r6: calc(mod(1664525 * var(--r5) * 4294967296 + 1013904223, 4294967296) / 4294967296);
+            --r7: calc(mod(1664525 * var(--r6) * 4294967296 + 1013904223, 4294967296) / 4294967296);
+            --r8: calc(mod(1664525 * var(--r7) * 4294967296 + 1013904223, 4294967296) / 4294967296);
+            pointer-events: none;
+        }
+
+        .screen {
+            border-radius: 7px;
+            border: solid 2px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes seichou {
+
+            from,
+            24.9% {
+                background-image: url(ninniku_seichou1.png);
+            }
+
+            25%,
+            49.9% {
+                background-image: url(ninniku_seichou2.png);
+            }
+
+            50%,
+            74.9% {
+                background-image: url(ninniku_seichou3.png);
+            }
+
+            75%,
+            99.9% {
+                background-image: url(ninniku_seichou4.png);
+                pointer-events: none;
+            }
+
+            to {
+                background-image: url(hatsuga_ninniku.png);
+                pointer-events: auto;
+                cursor: pointer;
+            }
+        }
+
+        @keyframes kansei {
+            from {
+                translate: 0 -10px;
+            }
+
+            to {
+                translate: 0 0;
+            }
+        }
+
+        @keyframes go-hatake {
+            to {
+                translate: 300px;
+            }
+        }
+
+        @keyframes go-home {
+            to {
+                translate: 0px;
+            }
+        }
+
+        @property --point {
+            syntax: "<integer>";
+            inherits: true;
+            initial-value: 0;
+        }
+
+        @keyframes point {
+            to {
+                --point: 3300;
+            }
+        }
+
+        .seichou-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            animation: point 60s linear;
+            animation-play-state: paused;
+            counter-reset: pt calc(var(--point) + var(--plus));
+
+            >div {
+                position: relative;
+            }
+        }
+
+        .seichou-grid::after {
+            counter-reset: plus var(--plus);
+            content: "得点:" counter(pt) "(+" counter(plus) ")";
+        }
+
+        .seichou {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            animation: seichou linear 3s forwards,
+                kansei ease-in-out 1s infinite 3s alternate;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .g1 {
+            top: calc(var(--r1) * 70%);
+            left: calc(var(--r2) * 70%);
+        }
+
+        .g2 {
+            top: calc(var(--r3) * 70%);
+            left: calc(var(--r4) * 70%);
+        }
+
+        .g3 {
+            top: calc(var(--r5) * 40%);
+            left: calc(var(--r6) * 70%);
+        }
+
+        .g4 {
+            top: calc(var(--r7) * 70%);
+            left: calc(var(--r8) * 70%);
+        }
+
+        .seichou-grid:has(.seichou:hover:active) {
+            animation-play-state: running;
+        }
+
+        .seichou:hover:active {
+            top: 10000px;
+            transition: top 1s;
+        }
+
+        .seichou:not(:hover):active {
+            animation: none;
+        }
+
+        .house {
+            position: absolute;
+            width: 130px;
+            height: 130px;
+            bottom: 0;
+            left: 0;
+            background-image: url(house.png);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .seconds {
+            display: flex;
+            animation: minute 0s 60s forwards;
+            pointer-events: none;
+
+            &::before {
+                font-size: smaller;
+                content: "残り時間: ";
+            }
+        }
+
+        @keyframes minute {
+            to {
+                pointer-events: auto;
+                opacity: 0;
+                width: 10000px;
+                height: 10000px;
+                z-index: 999;
+                position: fixed;
+            }
+        }
+
+        .number-wrapper {
+            width: 1ch;
+            height: 1em;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .number1 {
+            position: absolute;
+            overflow-wrap: anywhere;
+            line-height: 1em;
+            bottom: 0;
+            animation: movey 10s steps(10) infinite;
+        }
+
+        .number2 {
+            position: absolute;
+            overflow-wrap: anywhere;
+            line-height: 1em;
+            bottom: 0;
+            animation: movey 60s steps(6) infinite;
+        }
+
+        @keyframes movey {
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(100%);
+            }
+        }
+
+        body {
+            --plus: 0;
+        }
+
+        body:has(.seconds :checked) {
+            --plus: 10;
+        }
+
+        body:has(:is(.seconds :checked, .seconds:hover)) {
+            & .seconds~* * {
+                animation-play-state: paused !important;
+                pointer-events: none !important;
+            }
+
+            & .mouse-tracker .chara {
+                display: block;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1><img src="ninniku.png" width="40">にんにく君にんにく栽培する<img src="ninniku.png" width="40"></h1>
+    <div class="seconds"><input type="radio" hidden id="stop">
+        <div class="number-wrapper">
+            <div class="number2">012345</div>
+        </div>
+        <div class="number-wrapper">
+            <div class="number1">0123456789</div>
+        </div>
+    </div>
+    <div class="mouse-tracker">
+        <div class="left l">
+            <div class="top k">
+                <div class="left j">
+                    <div class="top i">
+                        <div class="left h">
+                            <div class="top g">
+                                <div class="left f">
+                                    <div class="top e">
+                                        <div class="left d">
+                                            <div class="top c">
+                                                <div class="left b">
+                                                    <div class="top a">
+                                                        <label class="screen click-random-build"><input type="radio"
+                                                                class="click-random-build" hidden>
+                                                            <label class="house" for="stop"></label>
+                                                            <div class="seichou-grid">
+                                                                <div>
+                                                                    <div class="seichou g1"></div>
+                                                                </div>
+                                                                <div>
+                                                                    <div class="seichou g2"></div>
+                                                                </div>
+                                                                <div>
+                                                                    <div class="seichou g3"></div>
+                                                                </div>
+                                                                <div>
+                                                                    <div class="seichou g4"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="chara"></div>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p>ルール説明</p>
+    <ul>
+        <li>
+            <p>にんにく君はにんにくを栽培したいと思っています</p>
+        </li>
+        <li>
+            <p>マウスを動かすとにんにく君が動きます</p>
+        </li>
+        <li>
+            <p>ページリロードされた瞬間からスタートです</p>
+        </li>
+        <li>
+            <p>まずは操作画面を1回クリックしましょう</p>
+        </li>
+        <li>
+            <p>にんにくが育つとクリックで回収できるようになります</p>
+        </li>
+        <li>
+            <p>残り時間(1分)までに家に帰ると成功です（+10点される）</p>
+        </li>
+        <li>
+            <p>毎回(ページリロードごとに)ランダムな場所ににんにくは生えます</p>
+        </li>
+    </ul>
+</body>
+</html>
